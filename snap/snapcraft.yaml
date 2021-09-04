@@ -9,10 +9,10 @@ description: |
 grade: stable
 confinement: strict
 
-# architectures:
-#   - build-on:
-#       - amd64
-#       - arm64
+architectures:
+  - build-on:
+      - amd64
+      - arm64
 
 plugs:
   network:
@@ -72,7 +72,7 @@ parts:
 
   rocketchat:
     plugin: dump
-    source: https://cdn-download.rocket.chat/build/rocket.chat-3.18.0.tgz
+    source: https://cdn-download.rocket.chat/build/rocket.chat-$SNAPCRAFT_PROJECT_VERSION.tgz
     build-snaps:
       - node/12/stable
     stage-snaps:
@@ -95,6 +95,8 @@ parts:
         - -README
         # filesets are excluding hidden files
         # BUG - need to fix upstream
+        # TODO: unrelated to this project, fix this iglob issue upstream
+        # so that I can have a cleaner snapcraft file -_-
         - .node_version.txt
         - '*'
     stage: *stage
