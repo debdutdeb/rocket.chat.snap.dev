@@ -50,17 +50,14 @@ validate_and_set_feature_compatibility_version() {
   local feature_compatibility_version=$(snapctl get db-feature-compatibility-version)
   [[ $feature_compatibility_version =~ ^3\.4|6$ ]] \
     || error "feature compatibility version should be either 3.4 or 3.6" 
-  local cmd
-  read -rd '' cmd <<EOF
-printjson(
-  db.adminCommand(
-    {
-      setFeatureCompatibiltyVersion: $feature_compatibility_version
-    }
-  )
-)
-EOF
-  mongo $(snapctl get mongo-url) --quiet --eval $cmd
+  mongo --quiet --eval \
+    "printjson(
+      db.adminCommand(
+        {
+          setFeatureCompatibiltyVersion: $feature_compatibility_version
+        }
+      )
+    )"
 }
 
 main() {
