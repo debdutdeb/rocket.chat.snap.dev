@@ -54,7 +54,7 @@ validate_and_set_feature_compatibility_version() {
     "printjson(
       db.adminCommand(
         {
-          setFeatureCompatibiltyVersion: $feature_compatibility_version
+          setFeatureCompatibilityVersion: $feature_compatibility_version
         }
       )
     )"
