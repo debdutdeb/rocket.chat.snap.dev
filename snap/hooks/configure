@@ -11,8 +11,7 @@ error() {
 
 validate_url() {
   local siteurl=$(snap get siteurl)
-  [[ $siteurl =~ ^https?://[a-zA-Z0-9\.]+[a-zA-Z0-9]$ ]] \
-    || error "\"$siteurl\" is not a valid url"
+  [[ $siteurl =~ ^https?://[a-zA-Z0-9\.]+[a-zA-Z0-9]$ ]] || error "\"$siteurl\" is not a valid url"
 }
 
 validate_port() {
@@ -29,8 +28,7 @@ _validate_mongo_url() {
   local host="[a-zA-Z0-9\.]+[a-zA-Z0-9]"
   local port="(:[0-9]+)?"
   local database="/${2:-.+}$"
-  [[ $1 =~ ${protocol}${authentication}${host}${port}${database} ]] \
-    || error "illegal mongo connection string" 
+  [[ $1 =~ ${protocol}${authentication}${host}${port}${database} ]] || error "illegal mongo connection string" 
 }
 
 validate_mongo_rocketchat_url() {
@@ -42,14 +40,12 @@ validate_mongo_oplog_url() {
 }
 
 validate_backup_on_refresh() {
-  [[ $(snapctl get backup-on-refresh) =~ ^(enable)|(disable)$ ]] \
-    || error "value must be either \"enable\" or \"disable\""
+  [[ $(snapctl get backup-on-refresh) =~ ^(enable)|(disable)$ ]] || error "value must be either \"enable\" or \"disable\""
 }
 
 validate_and_set_feature_compatibility_version() {
   local feature_compatibility_version=$(snapctl get db-feature-compatibility-version)
-  [[ $feature_compatibility_version =~ ^3\.4|6$ ]] \
-    || error "feature compatibility version should be either 3.4 or 3.6" 
+  [[ $feature_compatibility_version =~ ^3\.4|6$ ]] || error "feature compatibility version should be either 3.4 or 3.6" 
   mongo --quiet --eval \
     "printjson(
       db.adminCommand(
