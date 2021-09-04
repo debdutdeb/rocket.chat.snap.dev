@@ -9,6 +9,14 @@ description: |
 grade: stable
 confinement: strict
 
+# architectures:
+#   - build-on:
+#       - amd64
+#       - arm64
+
+plugs:
+  network:
+
 apps:
   rocketchat-mongo:
     command: bin/mongod.wrapper
@@ -29,7 +37,6 @@ apps:
     daemon: simple
     after: [rocketchat-mongo]
     plugs:
-      - network
       - network-bind
       - removable-media
 
