@@ -19,16 +19,10 @@ init_user_environment_variables() {
 
 start_rocketchat() {
   set -a
-
   PORT=$(snapctl get port)
   MONGO_URL=$(snapctl get mongo-url)
   MONGO_OPLOG_URL=$(snapctl get mongo-oplog-url)
-
-  MONGO_URL=${MONGO_URL:-mongodb://localhost:27017}
-  MONGO_OPLOG_URL=${MONGO_OPLOG_URL:-mongodb://localhost:27017/local}
-  PORT=${PORT:-3001}
-
-  set +a 
+  set +a
 
   init_user_environment_variables
 
@@ -40,9 +34,4 @@ start_rocketchat() {
   rm $SNAP_COMMON/rocketchat.pid
 }
 
-try_start() {
-  [[ $(snapctl get snap-refreshing) == "true" ]] && exit 0
-  start_rocketchat
-}
-
-try_start
+start_rocketchat

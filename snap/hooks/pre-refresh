@@ -6,8 +6,6 @@ export LD_LIBRARY_PATH=$SNAP_LIBRARY_PATH:$LD_LIBRARY_PATH
 
 TIMESTAMP=$(date +"%Y%m%d.%H%M")
 
-snapctl set snap-refreshing=true
-
 [[ $(snapctl get backup-on-refresh) == "enable" ]] && backupdb
 
 (( $? )) && echo "failed to backup rocketchat database before refresh" > $SNAP_COMMON/refresh_$TIMESTAMP.log
