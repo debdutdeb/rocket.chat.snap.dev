@@ -76,11 +76,22 @@ processManagement:
 EOF
 }
 
+init_default_snap_configurations() {
+  snapctl set port=3001
+  snapctl set mongo-url=mongodb://localhost:27017/parties
+  snapctl set mongo-oplog-url=mongodb://localhost:27017/local
+  snapctl set snap-refreshing=false
+  snapctl set siteurl=http://localhost:3001
+  snapctl set db-feature-compatibility-version=3.6
+  snapctl set backup-on-refresh=disable
+}
+
 main() {
   start_mongod || error "mongo server start failed"
   initiate_replicaset || error "replicaset initiation failed"
   stop_mongod || error "mongo server shutdown failed"
   init_mongod_conf
+  init_default_snap_configurations
 }
 
 main
