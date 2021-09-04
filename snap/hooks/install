@@ -1,0 +1,86 @@
+#! /bin/bash
+
+export PATH="$SNAP/bin:$SNAP/usr/bin:$PATH"
+
+error() {
+  printf "[ERROR] %s\n" "$*" >&2
+  exit 1
+}
+
+start_mongod() {
+  mongod \
+    --bind_ip=127.0.0.1 --port=27017 \
+    --smallfiles --dbpath=$SNAP_COMMON \
+    --pidfilepath=$SNAP_COMMON/mongod.pid --journal \
+    --replSet=rs0 \
+    --fork --syslog
+}
+
+stop_mongod() {
+  mongod --dbpath=$SNAP_COMMON --shutdown
+}
+
+_mongo() {
+  mongo --quiet --eval "$@"
+}
+
+is_mongo_ready() {
+  test "$(_mongo 'db.adminCommand({ ping: 1 }).ok' admin)" = 1
+}
+
+initiate_replicaset() {
+  local cmd
+
+  read -rd '' cmd <<EOF
+if (!db.isMaster().ismaster) {
+  rs.initiate(
+    {
+      _id: "rs0",
+      members: [
+        {
+          _id: 0,
+          host: "localhost:27017"
+        }
+      ]
+    }
+  ).ok;
+}
+EOF
+
+  if is_mongo_ready; then
+    rs=$(_mongo "$cmd")
+    test ${rs:-0} -eq 1
+  else
+    error "mongo started but still isn't ready for connections"
+  fi
+}
+
+init_mongod_conf() {
+  cat >$SNAP_DATA/mongod.conf <<EOF
+# for documentation of all options, see:
+#   http://docs.mongodb.org/manual/reference/configuration-options/
+
+
+################################################################
+# THE FOLLOWING SETTINGS ARE GOING TO BE OVERRIDEN BY THIS SNAP
+# storage
+# systemLog
+# net
+################################################################
+
+
+# how the process runs
+processManagement:
+  timeZoneInfo: /usr/share/zoneinfo
+
+EOF
+}
+
+main() {
+  start_mongod || error "mongo server start failed"
+  initiate_replicaset || error "replicaset initiation failed"
+  stop_mongod || error "mongo server shutdown failed"
+  init_mongod_conf
+}
+
+main

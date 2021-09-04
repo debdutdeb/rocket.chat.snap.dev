@@ -1,0 +1,71 @@
+#! /bin/bash
+
+export PATH="$SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$SNAP/lib:$SNAP/usr/lib:$SNAP/lib/x86_64-linux-gnu:$SNAP/usr/lib/x86_64-linux-gnu"
+export LD_LIBRARY_PATH=$SNAP_LIBRARY_PATH:$LD_LIBRARY_PATH
+
+error() {
+  printf "[ERROR] %s\n" "$*" >&2
+  exit 1
+}
+
+validate_url() {
+  local siteurl=$(snap get siteurl)
+  [[ $siteurl =~ ^https?://[a-zA-Z0-9\.]+[a-zA-Z0-9]$ ]] \
+    || error "\"$siteurl\" is not a valid url"
+}
+
+validate_port() {
+  local port=$(snapctl get port)
+  [[ $port =~ ^[0-9]$ ]] || error "\"$port\" not a valid number"
+  (( $port > 1024 )) && (( $port <= 65536 )) || error "port number ($port) not in unreserved srange"
+}
+
+_validate_mongo_url() {
+  # $1 - root connection uri
+  # $2 - database name
+  local protocol="^mongodb(\+srv)?://"
+  local authentication="((.+):(.+)@)?"
+  local host="[a-zA-Z0-9\.]+[a-zA-Z0-9]"
+  local port="(:[0-9]+)?"
+  local database="/${2:-.+}$"
+  [[ $1 =~ ${protocol}${authentication}${host}${port}${database} ]] \
+    || error "illegal mongo connection string" 
+}
+
+validate_mongo_rocketchat_url() {
+  _validate_mongo_url $(snapctl get mongo-url)
+}
+
+validate_mongo_oplog_url() {
+  _validate_mongo_url $(snapctl get mongo-oplog-url) local
+}
+
+validate_backup_on_refresh() {
+  [[ $(snapctl get backup-on-refresh) =~ ^(enable)|(disable)$ ]] \
+    || error "value must be either \"enable\" or \"disable\""
+}
+
+validate_feature_compatibility_version() {
+  local feature_compatibility_version=$(snapctl get db-feature-compatibility-version)
+  [[ $feature_compatibility_version =~ ^3\.4|6$ ]] \
+    || error "feature compatibility version should be either 3.4 or 3.6" 
+  mongo $(snapctl get mongo-url) --quiet --eval "
+  printjson(
+    db.adminCommand(
+      {
+        setFeatureCompatibiltyVersion: \"$feature_compatibility_version\"
+      }
+    )
+  )"
+}
+
+main() {
+  validate_port
+  validate_mongo_rocketchat_url
+  validate_mongo_oplog_url
+  validate_backup_on_refresh
+  validate_feature_compatibility_version
+}
+
+main

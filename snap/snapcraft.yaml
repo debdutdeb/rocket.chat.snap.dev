@@ -1,0 +1,118 @@
+name: rocketchat-server-development
+title: Rocket.Chat Server Development Version
+base: core
+version: '3.18.0'
+summary: An Open Source Slack Alternative
+description: |
+  Development builds of Rocket.Chat
+
+grade: stable
+confinement: strict
+
+apps:
+  rocketchat-mongo:
+    command: bin/mongod.wrapper
+    daemon: forking
+    plugs: [network-bind]
+
+  rocketchat-server:
+    command: bin/rocketchat.wrapper
+    environment:
+      XDG_DATA_HOME: $SNAP/usr/share
+      FONTCONFIG_PATH: $SNAP/etc/fonts/config.d
+      FONTCONFIG_FILE: $SNAP/etc/fonts/fonts.conf
+      DEPLOY_METHOD: snap
+      NODE_ENV: production
+      BABEL_CACHE_DIR: /tmp
+      ROOT_URL: http://localhost:3001
+      Accounts_AvatarStorePath: $SNAP_COMMON/uploads
+    daemon: simple
+    after: [mongod]
+    plugs:
+      - network
+      - network-bind
+      - removable-media
+
+  mongo:
+    command: usr/bin/mongo
+
+  rocketchat-caddy:
+    command: bin/caddy.wrapper
+    daemon: simple
+    plugs: [network-bind]
+
+hooks:
+  install: { plugs: [network-bind] }
+
+parts:
+  mongo:
+    plugin: mongodb
+    version: '3.6'
+    components:
+      - shell
+      - server
+      - tools
+    tools:
+      - mongodump
+      - mongorestore
+    filesets:
+      stage-fileset:
+        - -etc
+        - -lib/systemd
+        - -usr/share
+    stage: &stage
+      - $stage-fileset
+
+  rocketchat:
+    plugin: dump
+    source: https://cdn-download.rocket.chat/build/rocket.chat-3.18.0.tgz
+    build-snaps:
+      - node/12/stable
+    stage-snaps:
+      - node/12/stable
+    build-packages:
+      - build-essential
+      - on arm64:
+          - autoconf
+          - automake
+          - libtool
+    override-build: |
+      cd programs/server
+
+      [ "$SNAP_ARCH" = "arm64" ] && rm npm/node_modules/sharp/vendor -rf
+      NODE_ENV=production npm i --unsafe-perm
+
+      snapcraftctl build
+    filesets:
+      stage-fileset:
+        - -README
+        # filesets are excluding hidden files
+        # BUG - need to fix upstream
+        - .node_version.txt
+        - '*'
+    stage: *stage
+
+  caddy:
+    plugin: dump
+    source:
+      - on amd64: https://github.com/caddyserver/caddy/releases/download/v2.4.3/caddy_2.4.3_linux_amd64.tar.gz
+      - on arm64: https://github.com/caddyserver/caddy/releases/download/v2.4.3/caddy_2.4.3_linux_arm64.tar.gz
+    organize:
+      caddy: bin/caddy
+    filesets:
+      stage-fileset:
+        - -README.md
+        - -LICENSE
+    stage: *stage
+
+  wrappers:
+    plugin: dump
+    source: './wrappers'
+    organize:
+      '*': 'bin/'
+
+  scripts:
+    plugin: dump
+    source: './scripts'
+    organize:
+      '*': 'bin/'
