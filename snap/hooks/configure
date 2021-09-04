@@ -17,7 +17,7 @@ validate_url() {
 
 validate_port() {
   local port=$(snapctl get port)
-  [[ $port =~ ^[0-9]$ ]] || error "\"$port\" not a valid number"
+  [[ $port =~ ^[0-9]+$ ]] || error "\"$port\" not a valid number"
   (( $port > 1024 )) && (( $port <= 65536 )) || error "port number ($port) not in unreserved srange"
 }
 
