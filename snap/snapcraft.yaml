@@ -27,7 +27,7 @@ apps:
       ROOT_URL: http://localhost:3001
       Accounts_AvatarStorePath: $SNAP_COMMON/uploads
     daemon: simple
-    after: [mongod]
+    after: [rocketchat-mongo]
     plugs:
       - network
       - network-bind
