@@ -9,10 +9,12 @@ description: |
 grade: stable
 confinement: strict
 
-architectures:
-  - build-on:
-      - amd64
-      - arm64
+# snapcraft automatic builds do weird things
+# if this is there :/
+# architectures:
+#   - build-on:
+#       - amd64
+#       - arm64
 
 plugs:
   network:
