@@ -1,7 +1,7 @@
 name: rocketchat-server-development
 title: Rocket.Chat Server Development Version
-base: core
-version: '3.18.0'
+base: core18
+version: 3.18.3
 summary: An Open Source Slack Alternative
 description: |
   Development builds of Rocket.Chat
@@ -9,24 +9,17 @@ description: |
 grade: stable
 confinement: strict
 
-# snapcraft automatic builds do weird things
-# if this is there :/
-# architectures:
-#   - build-on:
-#       - amd64
-#       - arm64
-
 plugs:
   network:
 
 apps:
   rocketchat-mongo:
-    command: bin/mongod.wrapper
+    command: bin/mongod.service
     daemon: forking
     plugs: [network-bind]
 
   rocketchat-server:
-    command: bin/rocketchat.wrapper
+    command: bin/rocketchat.service
     environment:
       XDG_DATA_HOME: $SNAP/usr/share
       FONTCONFIG_PATH: $SNAP/etc/fonts/config.d
@@ -43,12 +36,22 @@ apps:
       - removable-media
 
   mongo:
-    command: usr/bin/mongo
+    command: bin/mongo
 
   rocketchat-caddy:
-    command: bin/caddy.wrapper
+    command: bin/caddy.service
     daemon: simple
     plugs: [network-bind]
+
+  backupdb:
+    command: bin/backupdb.sh
+    environment:
+      LC_ALL: C
+
+  restoredb:
+    command: bin/restoredb.sh
+    environment:
+      LC_ALL: C
 
 hooks:
   install: { plugs: [network-bind] }
@@ -56,7 +59,7 @@ hooks:
 parts:
   mongo:
     plugin: mongodb
-    version: '3.6'
+    version: '4.2'
     components:
       - shell
       - server
@@ -95,10 +98,11 @@ parts:
     filesets:
       stage-fileset:
         - -README
+        - -README.md
+        - -LICENSE
         # filesets are excluding hidden files
         # BUG - need to fix upstream
-        # TODO: unrelated to this project, fix this iglob issue upstream
-        # so that I can have a cleaner snapcraft file -_-
+        # not a bug, design choice
         - .node_version.txt
         - '*'
     stage: *stage
@@ -116,14 +120,28 @@ parts:
         - -LICENSE
     stage: *stage
 
-  wrappers:
+  daemons:
     plugin: dump
-    source: './wrappers'
+    source: './daemons'
     organize:
       '*': 'bin/'
 
-  scripts:
+  commands:
     plugin: dump
-    source: './scripts'
+    source: './commands'
     organize:
       '*': 'bin/'
+
+  script-dependecies:
+    plugin: nil
+    stage-packages:
+      # for hooks::configure::validate_url
+      - dnsutils
+      # for install::jq
+      - jq
+
+  migrations:
+    plugin: dump
+    source: ./migrations
+    organize:
+      '*': migrations/

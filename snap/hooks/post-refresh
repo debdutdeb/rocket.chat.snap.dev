@@ -6,22 +6,12 @@ export PATH="$SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH"
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$SNAP/lib:$SNAP/usr/lib:$SNAP/lib/${ARCH[$SNAP_ARCH]}-linux-gnu:$SNAP/usr/lib/${ARCH[$SNAP_ARCH]}-linux-gnu"
 export LD_LIBRARY_PATH="$SNAP_LIBRARY_PATH:$LD_LIBRARY_PATH"
 
-backup_if_enabled() {
-  [[ $(snapctl get backup-on-refresh) == "enable" ]] && {
-    backupdb.sh || {
-      echo "failed to backup rocketchat database before refresh" \
-        > $SNAP_COMMON/refresh_$(date +"%Y%m%d.%H%M").log
-    }
-  }
-}
-
-exec_pre_refresh_scripts() {
-  true
+exec_post_refresh_scripts() {
+    true
 }
 
 main() {
-  backup_if_enabled
-  exec_pre_refresh_scripts
+    exec_post_refresh_scripts
 }
 
 main
